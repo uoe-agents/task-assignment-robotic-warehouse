@@ -1,0 +1,36 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Steleac"
+  given-names: "Raul"
+title: "Task-Assignment Multi-Robot Warehouse (TA-RWARE)"
+version: 1.0.2
+date-released: 2024-03-14
+url: "https://github.com/raulsteleac/task-assignment-robotic-warehouse"
+preferred-citation:
+  type: conference-paper
+  authors:
+  - family-names: "Aleksandar"
+    given-names: "Krnjaic"
+  - family-names: "Steleac"
+    given-names: "Raul"
+  - family-names: "Thomas"
+    given-names: "Jonathan"
+  - family-names: "Papoudakis"
+    given-names: "Georgios"
+  - family-names: "Schäfer"
+    given-names: "Lukas"
+  - family-names: "Wing Keung To"
+    given-names: "Andrew"
+  - family-names: "Lao"
+    given-names: "Kuan-Ho"
+  - family-names: "Cubuktepe"
+    given-names: "Murat"
+  - family-names: "Haley"
+    given-names: "Matthew"
+  - family-names: "Börsting"
+    given-names: "Peter"
+  - family-names: "Albrecht"
+    given-names: "Stefano"
+  title: "Scalable Multi-Agent Reinforcement Learning for Warehouse Logistics with Robotic and Human Co-Workers"
+  url: "https://arxiv.org/abs/2212.11498"
