@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="tarware"
+version="1.1.0"
+description="Task-Assignment Multi-Robot Warehouse environment for reinforcement learning"
+readme = {file = "README.txt", content-type = "text/markdown"}
+authors = [
+  {name = "Raul Steleac", email = "raulsteleac@ed.ac.uk"},
+]
+license = {file = "LICENSE"}
+classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3.9",
+    ]
+dependencies = [
+    "numpy",
+    "gymnasium",
+    "six==1.16.0",
+    "pyglet==1.5.11",
+    "networkx==3.2.1",
+    "pyastar2d @ git+https://github.com/raulsteleac/pyastar2d_TARWARE#egg=pyastar2d_TARWARE"
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Repository  = "https://github.com/raulsteleac/task-assignment-robotic-warehouse.git"

@@ -1,10 +1,9 @@
+import time
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
-from dataclasses import dataclass
-import gym
+import gymnasium as gym
+
 from tarware.heuristic import heuristic_episode
-from tarware.warehouse import RewardType, Warehouse
-
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 parser = ArgumentParser(description="Run tests with vector environments on WarehouseEnv", formatter_class=ArgumentDefaultsHelpFormatter)
 
@@ -28,7 +27,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-
 def info_statistics(infos, global_episode_return, episode_returns):
     _total_deliveries = 0
     _total_clashes = 0
@@ -47,13 +45,15 @@ def info_statistics(infos, global_episode_return, episode_returns):
     return last_info
 
 if __name__ == "__main__":
-    env = gym.make("tarware-tiny-3agvs-2pickers-ag-easy-v1")
+    env = gym.make("tarware-extralarge-14agvs-7pickers-partialobs-v1")
     seed = args.seed
-    env.seed(seed)
     completed_episodes = 0
-    for _ in range(args.num_episodes):
-        infos, global_episode_return, episode_returns = heuristic_episode(env.unwrapped, args.render)
+    for i in range(args.num_episodes):
+        start = time.time()
+        infos, global_episode_return, episode_returns = heuristic_episode(env.unwrapped, args.render, seed+i)
+        end = time.time()
         last_info = info_statistics(infos, global_episode_return, episode_returns)
         last_info["overall_pick_rate"] = last_info.get("total_deliveries") * 3600 / (5 * last_info['episode_length'])
-        print(f"Completed Episode {completed_episodes}: | [Overall Pick Rate={last_info.get('overall_pick_rate'):.2f}]| [Global return={last_info.get('global_episode_return'):.2f}]| [Total shelf deliveries={last_info.get('total_deliveries'):.2f}]| [Total clashes={last_info.get('total_clashes'):.2f}]| [Total stuck={last_info.get('total_stuck'):.2f}]")
+        episode_length = len(infos)
+        print(f"Completed Episode {completed_episodes}: | [Overall Pick Rate={last_info.get('overall_pick_rate'):.2f}]| [Global return={last_info.get('global_episode_return'):.2f}]| [Total shelf deliveries={last_info.get('total_deliveries'):.2f}]| [Total clashes={last_info.get('total_clashes'):.2f}]| [Total stuck={last_info.get('total_stuck'):.2f}] | [FPS = {episode_length/(end-start):.2f}]")
         completed_episodes += 1

@@ -1,2 +1,2 @@
-from .spaces import MultiAgentActionSpace, MultiAgentObservationSpace
-from .utils import flatten_list, split_list, find_sections
+from .utils import (find_sections, flatten_list, get_next_micro_action,
+                    split_list)

@@ -1,12 +1,13 @@
 
-import logging
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
-from tarware.warehouse import Agent, AgentType
+
 from tarware.utils.utils import flatten_list, split_list
+from tarware.warehouse import Agent, AgentType
+
 
 class MissionType(Enum):
     PICKING = 1
@@ -21,17 +22,16 @@ class Mission:
     location_y: int
     assigned_time: int
     at_location: bool = False
-    
 
-def heuristic_episode(env, render=False):
+def heuristic_episode(env, render=False, seed=None):
     # non_goal_location_ids corresponds to the item ordering in `get_empty_shelf_information`
     non_goal_location_ids = []
-    for id_, coords in env.item_loc_dict.items():
+    for id_, coords in env.action_id_to_coords_map.items():
         if (coords[1], coords[0]) not in env.goals:
             non_goal_location_ids.append(id_)
     non_goal_location_ids = np.array(non_goal_location_ids)
-    location_map =  env.item_loc_dict 
-    _ = env.reset()
+    location_map =  env.action_id_to_coords_map
+    _ = env.reset(seed=seed)
     done = False
     all_infos = []
     timestep = 0
@@ -39,7 +39,7 @@ def heuristic_episode(env, render=False):
     agents = env.agents
     agvs = [a for a in agents if a.type == AgentType.AGV]
     pickers = [a for a in agents if a.type == AgentType.PICKER]
-    coords_original_loc_map = {v:k for k, v in env.item_loc_dict.items()}
+    coords_original_loc_map = {v:k for k, v in env.action_id_to_coords_map.items()}
     # split the pickers evenly into sections throughout the warehouse
     sections = env.rack_groups
     picker_sections = split_list(sections, len(pickers))
@@ -49,12 +49,11 @@ def heuristic_episode(env, render=False):
     assigned_pickers: dict[Agent, Mission] = OrderedDict({}) # keep track of what jobs Pickers have been assigned
     assigned_items: dict[int, Agent] = OrderedDict({}) # keep track of which items have been picked up by an AGV (key is item.id)
     global_episode_return = 0
-    episode_returns = np.zeros(env.n_agents)
+    episode_returns = np.zeros(env.num_agents)
     while not done:
-        
+
         request_queue = env.request_queue # this is a list of locations that need to be picked up next.
         goal_locations = env.goals # (y, x) format
-
         actions = {k: 0 for k in agents} # default to no-op
 
         # [AGV None -> AGV PICKING] find closest non-busy agv agent to each item in request queue, send them there, and put the AGV in a mission queue
@@ -62,10 +61,10 @@ def heuristic_episode(env, render=False):
 
             if item.id in assigned_items.values():
                 continue
-            
+
             available_agvs = [a for a in agvs if not a.busy and not a.carrying_shelf]
             available_agvs = [a for a in available_agvs if not a in assigned_agvs]
-            
+
             if not available_agvs:
                 continue
 
@@ -78,7 +77,7 @@ def heuristic_episode(env, render=False):
                 assigned_items[closest_agv] = item.id
 
         for agv in agvs:
-            
+
             if agv in assigned_agvs and (agv.x == assigned_agvs[agv].location_x) and (agv.y == assigned_agvs[agv].location_y):
                 assigned_agvs[agv].at_location = True
 
@@ -113,14 +112,13 @@ def heuristic_episode(env, render=False):
                 assigned_agvs.pop(agv)
                 assigned_items.pop(agv)
 
-        # Send pickers to where AGVs return items. Since assigned_agvs is ordered, the picker will prioritize the first agv
+        # Send pickers to where AGVs are going. Since assigned_agvs is ordered, the picker will prioritize the first agv
         for agv, mission in assigned_agvs.items():
             if mission.mission_type in [MissionType.PICKING, MissionType.RETURNING]:
-                in_pickers_zone = [(mission.location_y, mission.location_x) in p and mission.at_location for p in picker_sections]
-                if any(in_pickers_zone):
-                    relevant_picker = pickers[in_pickers_zone.index(True)]
-                    if relevant_picker not in assigned_pickers.keys():
-                        assigned_pickers[relevant_picker] = Mission(MissionType.PICKING, mission.location_id, mission.location_x, mission.location_y, timestep)
+                in_pickers_zone = [(mission.location_y, mission.location_x) in p for p in picker_sections]
+                relevant_picker = pickers[in_pickers_zone.index(True)]
+                if relevant_picker not in assigned_pickers.keys():
+                    assigned_pickers[relevant_picker] = Mission(MissionType.PICKING, mission.location_id, mission.location_x, mission.location_y, timestep)
 
         # Picker has reached destination, remove its mission.
         for picker in pickers:
@@ -128,20 +126,21 @@ def heuristic_episode(env, render=False):
                 assigned_pickers[picker].at_location = True
                 assigned_pickers.pop(picker)
 
-        # Map the missions to actions            
+        # Map the missions to actions
         for agv, mission in assigned_agvs.items():
             actions[agv] = mission.location_id if not agv.busy else 0
         for picker, mission in assigned_pickers.items():
             actions[picker] = mission.location_id
-        # macro_action should be the index of self.item_loc_dict
+        # macro_action should be the index of self.action_id_to_coords_map
         if render:
-            env.render("human")
-        observation, reward, done, info = env.step(list(actions.values()))
+            env.render(mode="human")
+
+        _, reward, terminated, truncated, info = env.step(list(actions.values()))
+        done = terminated or truncated
         episode_returns += np.array(reward, dtype=np.float64)
         global_episode_return += np.sum(reward)
         done = all(done)
         all_infos.append(info)
         timestep += 1
-    
-    return all_infos, global_episode_return, episode_returns 
-    
+
+    return all_infos, global_episode_return, episode_returns

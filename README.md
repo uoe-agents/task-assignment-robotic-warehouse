@@ -1,7 +1,7 @@
 
  <p align="center">TA-RWARE: Task-Assignment Multi-Robot Warehouse </p>
  <p align="center">
- <img width="500px" src="docs/img/tarware_explanation.png" align="center" alt="Task-Assignment Multi-Robot Warehouse (RWARE)" />
+ <img width="550px" src="docs/img/tarware_explanation.png" align="center" alt="Task-Assignment Multi-Robot Warehouse (RWARE)" />
 </p>
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
@@ -54,20 +54,20 @@ The observation of an agent consists of:
 - The loading status for AGVs
 - The status of each shelf location, occupied and requested.
 
-We note the distinction to the original RWARE environment, where the observation space is a fixed-size window around each agent. The nature of the TA problem and of the action space require the agents to have full information on the status of the shelf locations and requested items to maximize the pick rates. 
+We note the distinction to the original RWARE environment, where the observation space is a fixed size window around each agent. The nature of the TA problem and of the action space require the agents to have full information of the status of the shelf locations and requested items to maximize the pick-rates. 
 
 ## Dynamics: Collisions
 
-Collision dynamics are modeled by adapting the original RWARE implementation to the A* path-finding based traversal. Whenever a clash would happen (agent i steps on a current/future position of agent j), the agent goes into a "fixing_clash" state where it recomputes its trajectory towards the target location while taking the current position of the other agents into account. We note that this logic might lead to deadlock states, and agents being stuck, which we model by allowing the workers a fixed window of time-steps in which they can attempt to recalculate their path. If no path viable can be found during this period, the agents become available again and can choose another goal.
+Collision dynamics are modeled by adapting the original RWARE implementation to the A* path-finding based traversal. Whenver a clash would happen (agent i steps on a current/future position of agent j), the agent goes into a "fixing_clash" state where it recomputes it's trajectory towards the target location while taking the current position of the other agents into account. We note that this logic might lead into deadlock states, agents being stuck, which we model by allowing the workers a fixed window of time-steps in which they can atempt to recalculate their path. If no path viable could be found during this period, the agents become available again and can chose another goal.
 
 ## Rewards
-At each time a set number of shelves R is requested. When a requested shelf is brought to a goal location, another shelf is uniformly sampled and added to the current requests. AGVs are rewarded for successfully delivering a requested shelf to a goal location, with a reward of 1. Pickers receive a reward of 0.1 whenever they help an AGV to load/unload a shelf. A significant challenge in these environments is for AGVs to deliver requested shelves but also finding an empty location to return the previously delivered shelf. Having multiple steps between deliveries leads to a very sparse reward signal.
+At each time a set number of shelves R is requested. When a requested shelf is brought to a goal location, another shelf is uniformly sampled and added to the current requests. AGVs are rewarded for successfully delivering a requested shelf to a goal location, with a reward of 1. Pickers receive a reward of 0.1 whenerver they help an AGV to load/unload a shelf. A significant challenge in these environments is for AGVs to deliver requested shelves but also finding an empty location to return the previously delivered shelf. Having multiple steps between deliveries leads a very sparse reward signal.
 
 # Environment Parameters
 
-The multi-robot warehouse task is parameterized by:
+The multi-robot warehouse task is parameterised by:
 
-- The size of the warehouse which can be modified based on the number of rows, columns of shelf racks, and the number of shelves per rack. Here rack refers to a group of shelf initial locations.
+- The size of the warehouse which can be modifie based on the number of rows, columns of shelf racks and the number of shelfs per rack. Here rack refers to a gruop of shelf initial locations.
 - The number of agents, and the ratio between AGVs and Pickers.
 - The number of requested shelves R. 
 
@@ -86,14 +86,14 @@ RWARE was designed to be compatible with Open AI's Gym framework.
 Creating the environment is done exactly as one would create a Gym environment:
 
 ```python
-import gym
+import gymnasium as gym
 import tarware
 env = gym.make("tarware-tiny-3agvs-2pickers-ag-easy-v1")
 ```
 
 You can even bypass the `import` statement with Gym, and directly use:
 ```python
-import gym
+import gymnasium as gym
 env = gym.make("tarware-tiny-3agvs-2pickers-ag-easy-v1")
 ```
 The `rware:` in the beginning of the environment name tells Gym to import the respective package.
@@ -130,8 +130,7 @@ env.close()
 ```
 # Heuristic
 
-The environment also provides a pre-defined heuristic to use as a baseline. The heuristic logic for processing orders works similarly to a First in First out queuing system, where the closest available AGV is assigned the first order in the queue.
-The AGVs then travel towards the requested shelf using the A* path-finder. Once the AGV loads the shelf it transports it to the closest delivery location. Pickers are distributed in zones in the warehouse and travel to execute load/unload actions whenever AGVs reach target locations. Once an AGV loaded a shelf it travels towards the closest delivery location to execute a delivery.
+The environement also provides a pre-defined heuristic to use as a baseline. The heuristic logic is for processing orders works similar to a First in First out queuing system, where the closest available AGV and Picker are assigned the first oreder in the queue. The agents than travel towards the requested shelf using the A* path-finder. Once the AGV loaded the shelf it transports it to the closest delivery location and back to the closest empty shelf locaiton.
 
 The logic for running one heuristics episode can be found in `tarware/heuristic.py` and an example of running the heuristic on a tiny version of the environment can be found in `scripts/run_heuristic.py` and executed with the following command:
 
@@ -144,7 +143,7 @@ python scripts/run_heuristic.py --num_episodes=10000 --seed=0 --render
 If you use this environment, consider citing:
 ```
 @misc{krnjaic2023scalable,
-      title={Scalable Multi-Agent Reinforcement Learning for Warehouse Logistics with Robotic and Human Co-Workers}, 
+      title={Scalable Multi-Agent Reinforcement Learning for Warehouse Logistics with Robotic and Human Co-Workers},
       author={Aleksandar Krnjaic and Raul D. Steleac and Jonathan D. Thomas and Georgios Papoudakis and Lukas Schäfer and Andrew Wing Keung To and Kuan-Ho Lao and Murat Cubuktepe and Matthew Haley and Peter Börsting and Stefano V. Albrecht},
       year={2023},
       eprint={2212.11498},

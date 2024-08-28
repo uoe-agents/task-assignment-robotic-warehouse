@@ -1,10 +1,10 @@
-import gym
-import numpy as np
-from rware import Action
-from gym import spaces
-from gym import ObservationWrapper
-
 import math
+
+import gymnasium as gym
+import numpy as np
+from gymnasium import ObservationWrapper, spaces
+
+from tarware import Action
 
 
 class FlattenAgents(gym.Wrapper):
@@ -33,13 +33,14 @@ class FlattenAgents(gym.Wrapper):
         except (AttributeError, IndexError):
             action = [action]
 
-        observation, reward, done, info = super().step(action)
+        observation, reward, termindated, truncated, info = super().step(action)
         observation = np.concatenate(
             [spaces.flatten(s, o) for s, o in zip(self.observation_space, observation)]
         )
         reward = np.sum(reward)
-        done = all(done)
-        return observation, reward, done, info
+        termindated = all(termindated)
+        truncated = all(truncated)
+        return observation, reward, termindated, truncated, info
 
 
 class DictAgents(gym.Wrapper):
@@ -58,30 +59,31 @@ class DictAgents(gym.Wrapper):
         action = [action[key] for key in sorted(action.keys())]
 
         # step
-        observation, reward, done, info = super().step(action)
+        observation, reward, terminated, truncated, info = super().step(action)
 
-        # wrap observations, rewards and dones
+        # wrap observations, rewards,  terminated and truncated
         observation = {
             f"agent_{i:{digits}}": obs_i for i, obs_i in enumerate(observation)
         }
         reward = {f"agent_{i:{digits}}": rew_i for i, rew_i in enumerate(reward)}
-        done = {f"agent_{i:{digits}}": done_i for i, done_i in enumerate(done)}
-        done["__all__"] = all(done.values())
+        terminated = {f"agent_{i:{digits}}": terminated_i for i, terminated_i in enumerate(terminated)}
+        truncated = {f"agent_{i:{digits}}": truncated_i for i, truncated_i in enumerate(truncated)}
+        truncated["__all__"] = all(truncated.values())
 
-        return observation, reward, done, info
+        return observation, reward, terminated, truncated, info
 
 
 class FlattenSAObservation(ObservationWrapper):
     r"""Observation wrapper that flattens the observation."""
     def __init__(self, env):
         super(FlattenSAObservation, self).__init__(env)
-        
+
         ma_spaces = []
 
         for sa_obs in env.observation_space:
             flatdim = spaces.flatdim(sa_obs)
             ma_spaces += [spaces.Box(low=-float('inf'), high=float('inf'), shape=(flatdim,), dtype=np.float32)]
-        
+
         self.observation_space = spaces.Tuple(tuple(ma_spaces))
 
     def observation(self, observation):

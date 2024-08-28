@@ -8,10 +8,10 @@ import os
 import sys
 
 import numpy as np
-import math
 import six
-from gym import error
-from tarware.warehouse import Direction, AgentType
+from gymnasium import error
+
+from tarware.warehouse import AgentType, Direction
 
 if "Apple" in sys.version:
     if "DYLD_FALLBACK_LIBRARY_PATH" in os.environ:
@@ -32,7 +32,7 @@ except ImportError as e:
     )
 
 try:
-    from pyglet.gl import *
+    from pyglet.gl import gl
 except ImportError as e:
     raise ImportError(
         """
@@ -105,8 +105,8 @@ class Viewer(object):
         self.window.on_close = self.window_closed_by_user
         self.isopen = True
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
     def close(self):
         self.window.close()
@@ -115,16 +115,8 @@ class Viewer(object):
         self.isopen = False
         exit()
 
-    def set_bounds(self, left, right, bottom, top):
-        assert right > left and top > bottom
-        scalex = self.width / (right - left)
-        scaley = self.height / (top - bottom)
-        self.transform = Transform(
-            translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley)
-        )
-
     def render(self, env, return_rgb_array=False):
-        glClearColor(*_BACKGROUND_COLOR, 0)
+        gl.glClearColor(*_BACKGROUND_COLOR, 0)
         self.window.clear()
         self.window.switch_to()
         self.window.dispatch_events()
@@ -281,8 +273,8 @@ class Viewer(object):
 
             draw_color = _AGENT_LOADED_COLOR if agent.carrying_shelf else _AGENT_COLOR
 
-            glColor3ub(*draw_color)
-            circle.draw(GL_POLYGON)
+            gl.glColor3ub(*draw_color)
+            circle.draw(gl.GL_POLYGON)
 
         for agent in env.agents:
 
@@ -341,10 +333,10 @@ class Viewer(object):
             y = radius * math.sin(angle) + badge_y
             verts += [x, y]
         circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
-        glColor3ub(*_BLACK)
-        circle.draw(GL_POLYGON)
-        glColor3ub(*_WHITE)
-        circle.draw(GL_LINE_LOOP)
+        gl.glColor3ub(*_BLACK)
+        circle.draw(gl.GL_POLYGON)
+        gl.glColor3ub(*_WHITE)
+        circle.draw(gl.GL_LINE_LOOP)
         label = pyglet.text.Label(
             str(level),
             font_name="Times New Roman",
