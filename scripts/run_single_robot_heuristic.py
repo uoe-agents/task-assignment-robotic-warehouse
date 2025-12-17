@@ -33,6 +33,18 @@ parser.add_argument(
     type=str,
     help="Gymnasium environment ID",
 )
+parser.add_argument(
+    "--allocation_strategy",
+    default="greedy",
+    choices=["greedy", "batch_opt"],
+    help="Task allocation strategy for assigning robots to requested shelves",
+)
+parser.add_argument(
+    "--batch_size",
+    default=None,
+    type=int,
+    help="For batch_opt: number of FIFO requests to consider for min-cost matching (default: min(#available, #unassigned))",
+)
 
 args = parser.parse_args()
 
@@ -62,7 +74,11 @@ if __name__ == "__main__":
     for i in range(args.num_episodes):
         start = time.time()
         infos, global_episode_return, episode_returns = single_robot_heuristic_episode(
-            env.unwrapped, args.render, seed + i
+            env.unwrapped,
+            args.render,
+            seed + i,
+            allocation_strategy=args.allocation_strategy,
+            batch_size=args.batch_size,
         )
         end = time.time()
         last_info = info_statistics(infos, global_episode_return, episode_returns)

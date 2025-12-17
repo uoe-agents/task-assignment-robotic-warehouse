@@ -6,6 +6,7 @@ import numpy as np
 import time
 
 from tarware.warehouse import Agent
+from tarware.task_allocation import allocate_batch_min_cost, allocate_greedy_fifo
 
 
 class MissionType(Enum):
@@ -24,7 +25,14 @@ class Mission:
     at_location: bool = False
 
 
-def single_robot_heuristic_episode(env, render: bool = False, seed=None):
+def single_robot_heuristic_episode(
+    env,
+    render: bool = False,
+    seed=None,
+    allocation_strategy: str = "greedy",
+    batch_size: int | None = None,
+    render_sleep_s: float = 0.1,
+):
     """
     A variant of `tarware.heuristic.heuristic_episode` that assumes a *single robot type*
     which can pick up and deliver shelves (i.e. no Picker coordination).
@@ -58,33 +66,39 @@ def single_robot_heuristic_episode(env, render: bool = False, seed=None):
     episode_returns = np.zeros(env.num_agents)
 
     while not done:
-        time.sleep(0.1)
+        if render and render_sleep_s:
+            time.sleep(render_sleep_s)
         request_queue = env.request_queue  # FIFO list of shelf entities to be picked next
         goal_locations = env.goals  # (x, y) format in the env; we swap to (y, x) for A*
         actions = {k: 0 for k in robots}  # default to no-op
 
-        # [None -> PICKING] assign closest available robot to each shelf in request queue.
-        for item in request_queue:
+        # [None -> PICKING] allocate robots to shelves in request queue.
+        available = [a for a in robots if not a.busy and not a.carrying_shelf]
+        available = [a for a in available if a not in assigned_robots]
+        already_assigned_item_ids = list(assigned_items.values())
+
+        if allocation_strategy == "greedy":
+            new_assignments = allocate_greedy_fifo(env, available, request_queue, already_assigned_item_ids)
+        elif allocation_strategy in ("batch_opt", "batch_min_cost"):
+            new_assignments = allocate_batch_min_cost(
+                env, available, request_queue, already_assigned_item_ids, batch_size=batch_size
+            )
+        else:
+            raise ValueError(
+                f"Unknown allocation_strategy={allocation_strategy!r}. "
+                "Expected one of: 'greedy', 'batch_opt'."
+            )
+
+        for assn in new_assignments:
+            item = assn.item
+            robot = assn.robot
+            if robot in assigned_robots:
+                continue
             if item.id in assigned_items.values():
                 continue
-
-            available = [a for a in robots if not a.busy and not a.carrying_shelf]
-            available = [a for a in available if a not in assigned_robots]
-
-            if not available:
-                continue
-
-            shortest_paths = [
-                env.find_path((a.y, a.x), (item.y, item.x), a, care_for_agents=False) for a in available
-            ]
-            distances = [len(p) for p in shortest_paths]
-            closest_robot = available[int(np.argmin(distances))]
-
             item_location_id = coords_original_loc_map[(item.y, item.x)]
-            assigned_robots[closest_robot] = Mission(
-                MissionType.PICKING, item_location_id, item.x, item.y, timestep
-            )
-            assigned_items[closest_robot] = item.id
+            assigned_robots[robot] = Mission(MissionType.PICKING, item_location_id, item.x, item.y, timestep)
+            assigned_items[robot] = item.id
 
         # Mission progression per robot
         for robot in robots:
