@@ -23,7 +23,7 @@ _request_queues = {
     "extralarge": 60,
 }
 
-_perms = itertools.product(_sizes.keys(), _obs_types, range(1,20), range(1, 10))
+_perms = itertools.product(_sizes.keys(), _obs_types, range(1, 31), range(0, 10))
 
 for size, obs_type, num_agvs, num_pickers in _perms:
     # normal tasks
@@ -45,7 +45,7 @@ for size, obs_type, num_agvs, num_pickers in _perms:
     )
 
 def full_registration():
-    _perms = itertools.product(_sizes.keys(), _obs_types, _request_queues, range(1,20), range(1, 10),)
+    _perms = itertools.product(_sizes.keys(), _obs_types, _request_queues, range(1, 31), range(0, 10))
     for size, obs_type, num_agvs, num_pickers in _perms:
         # normal tasks with modified column height
         gym.register(
