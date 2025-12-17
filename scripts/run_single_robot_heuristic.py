@@ -2,6 +2,7 @@ import time
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 import gymnasium as gym
+import numpy as np
 
 from tarware.heuristic_single_robot import single_robot_heuristic_episode
 
@@ -36,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     "--allocation_strategy",
     default="greedy",
-    choices=["greedy", "batch_opt"],
+    choices=["greedy", "batch_opt", "bnb_opt"],
     help="Task allocation strategy for assigning robots to requested shelves",
 )
 parser.add_argument(
@@ -44,6 +45,35 @@ parser.add_argument(
     default=None,
     type=int,
     help="For batch_opt: number of FIFO requests to consider for min-cost matching (default: min(#available, #unassigned))",
+)
+parser.add_argument(
+    "--max_tasks_per_robot",
+    default=10000,
+    type=int,
+    help="For bnb_opt: maximum tasks per robot within the lookahead plan",
+)
+parser.add_argument(
+    "--node_budget",
+    default=5000,
+    type=int,
+    help="For bnb_opt: max branch-and-bound nodes to expand (safety cap)",
+)
+parser.add_argument(
+    "--max_seconds",
+    default=1000,
+    type=float,
+    help="For bnb_opt: wall-clock time limit for the branch-and-bound search (seconds)",
+)
+parser.add_argument(
+    "--empty_candidates_k",
+    default=1000000,
+    type=int,
+    help="For bnb_opt: number of candidate empty rack slots (closest to goal) to consider when estimating return cost",
+)
+parser.add_argument(
+    "--vary_seed",
+    action="store_true",
+    help="If set, uses (seed + episode_idx). Otherwise uses the same seed for all episodes (deterministic).",
 )
 
 args = parser.parse_args()
@@ -71,20 +101,29 @@ if __name__ == "__main__":
     env = gym.make(args.env_id)
     seed = args.seed
     completed_episodes = 0
+    episode_summaries = []
     for i in range(args.num_episodes):
         start = time.time()
+        episode_seed = (seed + i) if args.vary_seed else seed
         infos, global_episode_return, episode_returns = single_robot_heuristic_episode(
             env.unwrapped,
             args.render,
-            seed + i,
+            episode_seed,
             allocation_strategy=args.allocation_strategy,
             batch_size=args.batch_size,
+            max_tasks_per_robot=args.max_tasks_per_robot,
+            node_budget=args.node_budget,
+            max_seconds=args.max_seconds,
+            empty_candidates_k=args.empty_candidates_k,
         )
         end = time.time()
         last_info = info_statistics(infos, global_episode_return, episode_returns)
         last_info["overall_pick_rate"] = (
             last_info.get("total_deliveries") * 3600 / (5 * last_info["episode_length"])
         )
+        last_info["fps"] = last_info["episode_length"] / (end - start)
+        last_info["seed"] = episode_seed
+        episode_summaries.append(last_info)
         episode_length = len(infos)
         print(
             f"Completed Episode {completed_episodes}: "
@@ -96,5 +135,25 @@ if __name__ == "__main__":
             f"| [FPS = {episode_length/(end-start):.2f}]"
         )
         completed_episodes += 1
+
+    # Summary overview across episodes
+    if episode_summaries:
+        def _arr(key):
+            return np.array([e.get(key, 0.0) for e in episode_summaries], dtype=np.float64)
+
+        keys = [
+            "overall_pick_rate",
+            "global_episode_return",
+            "total_deliveries",
+            "total_clashes",
+            "total_stuck",
+            "episode_length",
+            "fps",
+        ]
+        print("\n=== Episode Summary (mean ± std | min .. max) ===")
+        print(f"strategy={args.allocation_strategy} env_id={args.env_id} episodes={len(episode_summaries)} seed_mode={'vary' if args.vary_seed else 'fixed'}")
+        for k in keys:
+            a = _arr(k)
+            print(f"{k}: {a.mean():.3f} ± {a.std(ddof=0):.3f} | {a.min():.3f} .. {a.max():.3f}")
 
 

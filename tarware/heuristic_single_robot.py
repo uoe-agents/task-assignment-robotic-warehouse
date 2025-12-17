@@ -6,7 +6,11 @@ import numpy as np
 import time
 
 from tarware.warehouse import Agent
-from tarware.task_allocation import allocate_batch_min_cost, allocate_greedy_fifo
+from tarware.task_allocation import (
+    allocate_batch_min_cost,
+    allocate_bnb_optimal_sequence,
+    allocate_greedy_fifo,
+)
 
 
 class MissionType(Enum):
@@ -31,6 +35,10 @@ def single_robot_heuristic_episode(
     seed=None,
     allocation_strategy: str = "greedy",
     batch_size: int | None = None,
+    max_tasks_per_robot: int = 10000,
+    node_budget: int = 5000,
+    max_seconds: float | None = 1000,
+    empty_candidates_k: int = 1000000,
     render_sleep_s: float = 0.1,
 ):
     """
@@ -83,10 +91,25 @@ def single_robot_heuristic_episode(
             new_assignments = allocate_batch_min_cost(
                 env, available, request_queue, already_assigned_item_ids, batch_size=batch_size
             )
+        elif allocation_strategy in ("bnb_opt", "bnb"):
+            new_assignments = allocate_bnb_optimal_sequence(
+                env,
+                available,
+                request_queue,
+                already_assigned_item_ids,
+                batch_size=batch_size,
+                max_tasks_per_robot=max_tasks_per_robot,
+                node_budget=node_budget,
+                max_seconds=max_seconds,
+                empty_candidates_k=empty_candidates_k,
+            )
+            # Safety fallback: if BnB returns nothing under budget but work is available, don't stall the sim.
+            if not new_assignments and available:
+                new_assignments = allocate_greedy_fifo(env, available, request_queue, already_assigned_item_ids)
         else:
             raise ValueError(
                 f"Unknown allocation_strategy={allocation_strategy!r}. "
-                "Expected one of: 'greedy', 'batch_opt'."
+                "Expected one of: 'greedy', 'batch_opt', 'bnb_opt'."
             )
 
         for assn in new_assignments:
