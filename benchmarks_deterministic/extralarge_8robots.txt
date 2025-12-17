@@ -1,0 +1,34 @@
+SMALL 3 ROBOTS
+
+bnb_opt
+=== Episode Summary (mean ± std | min .. max) ===
+strategy=bnb_opt env_id=tarware-extralarge-8agvs-0pickers-partialobs-v1 episodes=20 seed_mode=vary
+overall_pick_rate: 66.096 ± 3.640 | 59.040 .. 73.440
+global_episode_return: 51.045 ± 2.967 | 45.300 .. 56.800
+total_deliveries: 45.900 ± 2.528 | 41.000 .. 51.000
+total_clashes: 22.000 ± 3.521 | 16.000 .. 29.000
+total_stuck: 0.050 ± 0.218 | 0.000 .. 1.000
+episode_length: 500.000 ± 0.000 | 500.000 .. 500.000
+fps: 186.725 ± 5.545 | 178.400 .. 196.219
+
+greedy
+=== Episode Summary (mean ± std | min .. max) ===
+strategy=greedy env_id=tarware-extralarge-8agvs-0pickers-partialobs-v1 episodes=20 seed_mode=vary
+overall_pick_rate: 66.096 ± 4.070 | 54.720 .. 72.000
+global_episode_return: 50.990 ± 3.354 | 41.200 .. 56.000
+total_deliveries: 45.900 ± 2.827 | 38.000 .. 50.000
+total_clashes: 33.900 ± 59.129 | 12.000 .. 291.000
+total_stuck: 1.700 ± 7.410 | 0.000 .. 34.000
+episode_length: 500.000 ± 0.000 | 500.000 .. 500.000
+fps: 396.488 ± 14.434 | 359.588 .. 416.444
+
+batch_opt
+=== Episode Summary (mean ± std | min .. max) ===
+strategy=batch_opt env_id=tarware-extralarge-8agvs-0pickers-partialobs-v1 episodes=20 seed_mode=vary
+overall_pick_rate: 66.744 ± 3.261 | 61.920 .. 73.440
+global_episode_return: 51.595 ± 2.623 | 47.700 .. 57.400
+total_deliveries: 46.350 ± 2.264 | 43.000 .. 51.000
+total_clashes: 20.800 ± 7.075 | 9.000 .. 45.000
+total_stuck: 0.000 ± 0.000 | 0.000 .. 0.000
+episode_length: 500.000 ± 0.000 | 500.000 .. 500.000
+fps: 386.823 ± 15.072 | 348.934 .. 406.993
