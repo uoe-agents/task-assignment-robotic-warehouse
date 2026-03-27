@@ -4,7 +4,79 @@ from typing import Dict, List, Optional, Tuple
 import gymnasium as gym
 import networkx as nx
 import numpy as np
-import pyastar2d
+try:
+    import pyastar2d
+except Exception:
+    # Fall back to a pure-Python pathfinder when the native pyastar2d
+    # extension is not available. This fallback implements a simple BFS on
+    # the grid where finite cells are considered passable. It is intentionally
+    # conservative (no heuristics) but allows running smoke tests without
+    # compiling the upstream extension.
+    from collections import deque
+
+    class _PyAstarFallback:
+        @staticmethod
+        def astar_path(grid, start, goal, allow_diagonal=False):
+            # Ensure start/goal are integer (y,x) pairs
+            try:
+                sy, sx = int(start[0]), int(start[1])
+                gy, gx = int(goal[0]), int(goal[1])
+            except Exception:
+                return None
+
+            h, w = grid.shape
+            if not (0 <= sy < h and 0 <= sx < w and 0 <= gy < h and 0 <= gx < w):
+                return None
+
+            # Passable when grid cell is finite (not np.inf)
+            def passable(y, x):
+                try:
+                    return np.isfinite(grid[y, x])
+                except Exception:
+                    return False
+
+            if not passable(sy, sx) or not passable(gy, gx):
+                return None
+
+            q = deque()
+            q.append((sy, sx))
+            parent = { (sy, sx): None }
+
+            neigh_offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+            if allow_diagonal:
+                neigh_offsets += [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+            found = False
+            while q:
+                y, x = q.popleft()
+                if (y, x) == (gy, gx):
+                    found = True
+                    break
+                for dy, dx in neigh_offsets:
+                    ny, nx = y + dy, x + dx
+                    if not (0 <= ny < h and 0 <= nx < w):
+                        continue
+                    if not passable(ny, nx):
+                        continue
+                    if (ny, nx) in parent:
+                        continue
+                    parent[(ny, nx)] = (y, x)
+                    q.append((ny, nx))
+
+            if not found:
+                return None
+
+            # Reconstruct path as a list of (y, x) coordinates (matching
+            # the expected format used elsewhere in the code)
+            path = []
+            node = (gy, gx)
+            while node is not None:
+                path.append(node)
+                node = parent.get(node)
+            path.reverse()
+            return path
+
+    pyastar2d = _PyAstarFallback()
 from gymnasium import spaces
 from tarware.definitions import (Action, AgentType, Direction,
                                  RewardType, CollisionLayers)

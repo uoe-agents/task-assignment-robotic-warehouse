@@ -23,6 +23,14 @@ parser.add_argument(
 parser.add_argument(
         "--render",
         action='store_true',
+        help="Render the environment"
+    )
+parser.add_argument(
+
+        "--env-id",
+        default="tarware-extralarge-14agvs-7pickers-partialobs-v1",
+        type=str,
+        help="Gym env id to run heuristic on",
     )
 
 args = parser.parse_args()
@@ -45,7 +53,8 @@ def info_statistics(infos, global_episode_return, episode_returns):
     return last_info
 
 if __name__ == "__main__":
-    env = gym.make("tarware-extralarge-14agvs-7pickers-partialobs-v1")
+    # env = gym.make("tarware-extralarge-14agvs-7pickers-partialobs-v1")
+    env = gym.make(args.env_id, disable_env_checker=True)
     seed = args.seed
     completed_episodes = 0
     for i in range(args.num_episodes):

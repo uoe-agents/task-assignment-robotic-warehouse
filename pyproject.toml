@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name="tarware"
 version="1.1.0"
 description="Task-Assignment Multi-Robot Warehouse environment for reinforcement learning"
-readme = {file = "README.txt", content-type = "text/markdown"}
+readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
   {name = "Raul Steleac", email = "raulsteleac@ed.ac.uk"},
 ]
@@ -27,6 +27,10 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+sb3 = ["stable-baselines3", "sb3-contrib"]
 
 [project.urls]
 Repository  = "https://github.com/raulsteleac/task-assignment-robotic-warehouse.git"
+
+[tool.setuptools.packages.find]
+include = ["tarware*", "tarware_ext*"]

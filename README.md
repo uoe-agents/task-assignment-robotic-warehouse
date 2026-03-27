@@ -20,6 +20,7 @@
   - [Custom layout](#custom-layout)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Architecture (Experimental Framework)](#architecture-experimental-framework)
 - [Heuristic](#heuristic)
 - [Please Cite](#please-cite)
 
@@ -131,6 +132,11 @@ and should be closed before terminating:
 ```python
 env.close()
 ```
+
+# Architecture (Experimental Framework)
+
+For a simple, didactic guide to the experimental flow (scripts -> runner -> adapter -> env/policy/metrics), see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 # Heuristic
 
 The environment also provides a pre-defined heuristic to use as a baseline. The heuristic logic for processing orders works similarly to a First in First out queuing system, where the closest available AGV and Picker are assigned the first order in the queue. The agents then travel toward the requested shelf using the A* path-finder. Once the AGV loads the shelf it transports it to the closest delivery location and back to the closest empty shelf location.

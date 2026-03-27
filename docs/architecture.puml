@@ -1,0 +1,37 @@
+@startuml TaskAssignmentArchitecture
+skinparam packageStyle rectangle
+
+package "Training" {
+  [train_sb3_assignment_ppo.py]
+}
+
+package "Environment Integration" {
+  [graph_assignment_env.py]
+  [ActionMasker / MaskablePPO]
+  [MlpPolicy / MultiInputPolicy]
+}
+
+package "Graph Module" {
+  [gnn_feature_extractor.py]
+  [gnn_minimal.py]
+}
+
+package "Execution Module" {
+  [heuristic_controller.py]
+}
+
+package "Simulator" {
+  [TA-RWARE]
+}
+
+[train_sb3_assignment_ppo.py] --> [graph_assignment_env.py]
+[train_sb3_assignment_ppo.py] --> [ActionMasker / MaskablePPO]
+[train_sb3_assignment_ppo.py] --> [MlpPolicy / MultiInputPolicy]
+
+[MlpPolicy / MultiInputPolicy] --> [gnn_feature_extractor.py]
+[gnn_feature_extractor.py] --> [gnn_minimal.py]
+
+[graph_assignment_env.py] --> [heuristic_controller.py]
+[graph_assignment_env.py] --> [TA-RWARE]
+[heuristic_controller.py] --> [TA-RWARE]
+@enduml

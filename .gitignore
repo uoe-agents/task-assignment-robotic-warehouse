@@ -172,6 +172,14 @@ target/
 # pyenv
 .python-version
 
+# Local virtual environment
+.venv/
+
+demos/*
+eval/*
+demos - Copy/*
+eval - Copy/*
+
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
@@ -245,4 +253,12 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# other files
+*.json
+*.csv
+*.zip
+*.tar.gz
+*.pdf
+*.jpg
+*.jpeg
 # End of https://www.gitignore.io/api/linux,python,windows,pycharm+all,visualstudiocode
